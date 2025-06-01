@@ -1,47 +1,59 @@
-# --- 1. Chọn image gốc có sẵn PHP với Composer ---
+# 1. Start từ image PHP-FPM (có thể dùng 8.1, 8.0, tùy phiên bản Laravel của bạn)
 FROM php:8.1-fpm
 
-# --- 2. Cài các extension cần thiết và công cụ build ---
+# 2. Cài đặt các gói hệ thống cần thiết:
+#    - libpq-dev: để cài pdo_pgsql (PostgreSQL)
+#    - libicu-dev: để build ext-intl
+#    - libonig-dev: để build mbstring
+#    - libzip-dev: để build zip
+#    - git, unzip, curl: công cụ phục vụ Composer / Git
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
+    curl \
     libpq-dev \
+    libicu-dev \
     libonig-dev \
     libzip-dev \
     zip \
-    curl \
-    && docker-php-ext-install pdo pdo_pgsql mbstring zip bcmath
+    && docker-php-ext-install \
+    pdo_pgsql \
+    intl \
+    mbstring \
+    zip \
+    bcmath \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# --- 3. Cài Composer (nếu image gốc không có sẵn) ---
-#    (Trên image php:8.1-fpm, chưa chắc đã có composer, nên ta tự tải)
+# 3. Copy sẵn Composer từ image composer chính chủ (đã bao gồm PHP nhanh gọn)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# --- 4. Tạo thư mục làm việc và copy code vào container ---
+# 4. Tạo thư mục làm việc và copy composer files trước (để tận dụng cache)
 WORKDIR /var/www/html
-
-# Copy toàn bộ file composer* lên trước để tận dụng cache
 COPY composer.json composer.lock ./
 
-# Cài đặt dependencies PHP (composer)
+# 5. Cài đặt các dependency PHP thông qua Composer
+#    --no-dev: tránh cài package dev
+#    --optimize-autoloader: tối ưu autoloader
+#    --prefer-dist: ưu tiên tải package bản nén
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-# Copy nốt toàn bộ source code (trừ các mục trong .dockerignore)
+# 6. Copy toàn bộ source code của bạn (trừ những mục .dockerignore)
 COPY . .
 
-# --- 5. Thiết lập quyền cho storage và bootstrap/cache ---
+# 7. Cho phép PHP ghi vào storage và cache
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
-# --- 6. Build front-end (nếu bạn dùng Vite / Mix / npm) ---
-# Nếu có file package.json ở root và bạn dùng Vite/Mix, hãy thêm:
-RUN apt-get update && apt-get install -y nodejs npm
-RUN npm install && npm run build
+# 8. (Tùy chọn) Nếu bạn có front-end (Vite/Mix), bạn có thể cài Node và build ngay trong Docker:
+#    RUN apt-get update && apt-get install -y nodejs npm
+#    RUN npm install && npm run build
 
-# --- 7. Expose port mà PHP-FPM hoặc artisan serve sẽ chạy ---
+# 9. Expose cổng 9000 (artisan serve hoặc php-fpm sẽ chạy trên port này)
 EXPOSE 9000
 
-# --- 8. Start Command mặc định: chạy PHP-FPM (có thể chạy artisan serve) ---
-#    Ở đây ta dùng PHP-FPM trực tiếp, ta sẽ dùng một webserver (Nginx) làm proxy
-#    Nhưng vì Render sẽ gọi theo "Start Command" sau, ta sẽ hướng dẫn dùng artisan serve.
+# 10. Cuối cùng: migrate database và start Laravel bằng artisan serve
+#     - Lệnh php artisan migrate --force sẽ tự tạo bảng
+#     - Sau đó, chạy artisan serve để lắng nghe 0.0.0.0:9000
 CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=9000"]
