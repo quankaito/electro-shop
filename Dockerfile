@@ -1,18 +1,18 @@
-# -------------------------------
-#  1. SỬ DỤNG PHP 8.3-FPM LÀM BASE IMAGE
-# -------------------------------
+#############################################
+# 1. Chọn PHP 8.3-FPM làm base image
+#############################################
 FROM php:8.3-fpm
 
-# -------------------------------
-#  2. CÀI ĐẶT CÁC GÓI HỆ THỐNG CẦN THIẾT
-#     - libpq-dev: để cài pdo_pgsql (PostgreSQL)
-#     - libicu-dev: để cài ext-intl
-#     - libonig-dev: để cài mbstring
-#     - libzip-dev: để cài zip
-#     - build-essential: để hỗ trợ build native modules (nếu cần)
-#     - nodejs & npm: để build frontend (Vite/Mix)
-#     - git, unzip, curl: hỗ trợ Composer, Git
-# -------------------------------
+#############################################
+# 2. Cài gói hệ thống cần thiết
+#    - libpq-dev: để build pdo_pgsql (Postgres)
+#    - libicu-dev: để build ext-intl
+#    - libonig-dev: mbstring
+#    - libzip-dev: zip extension
+#    - build-essential: gcc/g++ (nếu frontend build cần)
+#    - nodejs + npm: build frontend (Vite/Mix)
+#    - git, unzip, curl: hỗ trợ Composer, Git
+#############################################
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -33,56 +33,58 @@ RUN apt-get update && apt-get install -y \
     bcmath \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# -------------------------------
-#  3. COPY COMPOSER TỪ IMAGE CHÍNH CHỦ
-# -------------------------------
+#############################################
+# 3. Copy Composer từ image chính chủ
+#############################################
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# -------------------------------
-#  4. CHỌN THƯ MỤC LÀM VIỆC
-# -------------------------------
+#############################################
+# 4. Chọn thư mục làm việc
+#############################################
 WORKDIR /var/www/html
 
-# -------------------------------
-#  5. COPY composer.json VÀ composer.lock → CHẠY composer install
-#     (để tận dụng cache Docker layer: nếu composer.json/composer.lock không đổi, 
-#      Docker sẽ không download lại dependencies)
-# -------------------------------
-COPY composer.json composer.lock ./
-# Nếu dự án cần tăng memory cho Composer, thêm:
-# ENV COMPOSER_MEMORY_LIMIT=-1
+#############################################
+# 5. Copy TOÀN BỘ source code (bao gồm artisan, config, app, v.v.)
+#    - Bước này đảm bảo file artisan đã có mặt trước khi Composer chạy.
+#    - .dockerignore sẽ loại trừ vendor/, node_modules/, .env, .git, v.v.
+#############################################
+COPY . .
+
+#############################################
+# 6. Cài dependencies PHP qua Composer
+#    - Khi chạy, Laravel post-autoload scripts (vd: artisan package:discover) sẽ hoạt động 
+#      vì file artisan đã được copy ở bước 5.
+#    - Nếu cần tăng memory, có thể thêm ENV COMPOSER_MEMORY_LIMIT=-1 
+#############################################
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-# -------------------------------
-#  6. COPY package.json VÀ package-lock.json → CHẠY npm install & npm run build
-#     (build frontend assets, ví dụ sử dụng Vite hoặc Laravel Mix)
-# -------------------------------
-COPY package.json package-lock.json ./
+#############################################
+# 7. Build frontend (npm install + npm run build)
+#    - Giả sử bạn có file package.json & package-lock.json ở root.
+#    - Nếu bạn sử dụng Yarn, thay bằng yarn install && yarn build.
+#############################################
 RUN npm install
 RUN npm run build
 
-# -------------------------------
-#  7. COPY TOÀN BỘ SOURCE CODE (theo .dockerignore)
-# -------------------------------
-COPY . .
-
-# -------------------------------
-#  8. PHÂN QUYỀN CHO storage VÀ bootstrap/cache
-# -------------------------------
+#############################################
+# 8. Phân quyền cho storage và bootstrap/cache
+#############################################
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
-# -------------------------------
-#  9. EXPOSE PORT 9000 (php artisan serve sẽ lắng nghe cổng này)
-# -------------------------------
+#############################################
+# 9. Expose PORT 9000 (Laravel serve sẽ chạy port này)
+#############################################
 EXPOSE 9000
 
-# -------------------------------
-# 10. KHI CONTAINER KHỞI ĐỘNG:
-#     - ĐỢI DATABASE SẴN SÀNG (sleep 5)
-#     - CHẠY php artisan migrate --force (tự động tạo/migrate schema)
-#     - CHẠY php artisan serve trên 0.0.0.0:9000
-#     (Nếu bạn không muốn migrate tự động, bỏ phần migrate đi)
-# -------------------------------
+#############################################
+# 10. Khi container khởi động:
+#     - Đợi 5 giây để database (Postgres) có thể lên sẵn
+#     - Tự động migrate database: php artisan migrate --force
+#     - Serve Laravel: php artisan serve --host=0.0.0.0 --port=9000
+#
+# Nếu bạn không muốn migrate tự động, chỉ cần xóa phần migrate:
+#   CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=9000"]
+#############################################
 CMD ["sh", "-c", "sleep 5 && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=9000"]
