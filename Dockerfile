@@ -1,12 +1,7 @@
-# 1. Start từ image PHP-FPM (có thể dùng 8.1, 8.0, tùy phiên bản Laravel của bạn)
+# --- 1. Base image: PHP-FPM 8.1 ---
 FROM php:8.1-fpm
 
-# 2. Cài đặt các gói hệ thống cần thiết:
-#    - libpq-dev: để cài pdo_pgsql (PostgreSQL)
-#    - libicu-dev: để build ext-intl
-#    - libonig-dev: để build mbstring
-#    - libzip-dev: để build zip
-#    - git, unzip, curl: công cụ phục vụ Composer / Git
+# --- 2. Cài các package & extension PHP cần thiết ---
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -22,38 +17,32 @@ RUN apt-get update && apt-get install -y \
     mbstring \
     zip \
     bcmath \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 3. Copy sẵn Composer từ image composer chính chủ (đã bao gồm PHP nhanh gọn)
+# --- 3. Cài Composer từ image composer chính chủ ---
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# 4. Tạo thư mục làm việc và copy composer files trước (để tận dụng cache)
+# --- 4. Thiết lập thư mục làm việc ---
 WORKDIR /var/www/html
-COPY composer.json composer.lock ./
 
-# 5. Cài đặt các dependency PHP thông qua Composer
-#    --no-dev: tránh cài package dev
-#    --optimize-autoloader: tối ưu autoloader
-#    --prefer-dist: ưu tiên tải package bản nén
+# --- 5. Copy composer.json & composer.lock, rồi cài dependencies PHP ---
+COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-# 6. Copy toàn bộ source code của bạn (trừ những mục .dockerignore)
+# --- 6. Copy toàn bộ source code (theo .dockerignore) ---
 COPY . .
 
-# 7. Cho phép PHP ghi vào storage và cache
+# --- 7. Gán quyền cho storage và bootstrap/cache ---
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
-# 8. (Tùy chọn) Nếu bạn có front-end (Vite/Mix), bạn có thể cài Node và build ngay trong Docker:
-#    RUN apt-get update && apt-get install -y nodejs npm
-#    RUN npm install && npm run build
+# --- 8. Tùy chọn: nếu không có front-end, có thể bỏ qua bước cài Node/Vite ---
+# RUN apt-get update && apt-get install -y nodejs npm
+# RUN npm install && npm run build
 
-# 9. Expose cổng 9000 (artisan serve hoặc php-fpm sẽ chạy trên port này)
+# --- 9. Expose port (artisant serve sẽ dùng port này) ---
 EXPOSE 9000
 
-# 10. Cuối cùng: migrate database và start Laravel bằng artisan serve
-#     - Lệnh php artisan migrate --force sẽ tự tạo bảng
-#     - Sau đó, chạy artisan serve để lắng nghe 0.0.0.0:9000
+# --- 10. Migrate & serve ---
 CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=9000"]
