@@ -1,6 +1,16 @@
+# Thư mục mà Docker sẽ không copy
 vendor/
 node_modules/
+
+# Log, cache, build output
 npm-debug.log
+yarn-error.log
 .env
+
+# Git
 .git
 .gitignore
+
+# IDE files (tùy bạn)
+.idea/
+.vscode/
