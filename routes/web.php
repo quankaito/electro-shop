@@ -9,6 +9,7 @@ use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\BlogController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Livewire\User\Dashboard as UserDashboard; 
 
 /*
 |--------------------------------------------------------------------------
@@ -73,9 +74,14 @@ Route::post('/logout', function (Request $request) {
 })->name('logout');
 
 // Các route mặc định của Laravel Breeze/Jetstream (nếu bạn dùng)
-Route::view('dashboard', 'dashboard') // Cái này có thể được thay thế bằng AccountController@dashboard
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard'); // Đã có account.dashboard
+// Route::view('dashboard', 'dashboard') // Cái này có thể được thay thế bằng AccountController@dashboard
+//     ->middleware(['auth', 'verified'])
+//     ->name('dashboard'); // Đã có account.dashboard
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Route này sẽ gọi trực tiếp Livewire component
+    Route::get('dashboard', UserDashboard::class)
+         ->name('dashboard');
+});
 
 Route::view('profile', 'profile') // Cái này là trang profile mặc định của Breeze/Jetstream, có thể bạn muốn dùng AccountController@profile
     ->middleware(['auth'])

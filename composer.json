@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "anayarojo/shoppingcart": "^4.2",
+        "blade-ui-kit/blade-icons": "^1.8",
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "filament/filament": "^3.3",
         "laravel/framework": "^12.0",

@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'admin_address' => env('ADMIN_EMAIL', 'nguyenminhquan170304@gmail.com'),
 
     /*
     |--------------------------------------------------------------------------

@@ -13,6 +13,10 @@ use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use App\Mail\NewOrderAdminMail;
+use App\Mail\OrderConfirmationMail;
+use Illuminate\Support\Facades\Log; // Để log lỗi nếu gửi mail thất bại
+use Illuminate\Support\Facades\Mail;
 
 class CheckoutPage extends Component
 {
@@ -314,10 +318,12 @@ class CheckoutPage extends Component
         }
 
         $orderNumber = null;
+        $order = null; // Để truyền ra ngoài transaction
 
-        DB::transaction(function () use (&$orderNumber) {
+        DB::transaction(function () use (&$orderNumber, &$order) {
             $addr = Address::find($this->selectedShippingAddressId);
 
+            // Tạo order
             $order = Order::create([
                 'user_id'             => Auth::id(),
                 'customer_name'       => $addr->full_name,
@@ -336,13 +342,11 @@ class CheckoutPage extends Component
                 'notes'               => '',
             ]);
 
-            // Duyệt qua từng item trong Cart, tạo OrderItem và giảm tồn kho
+            // Duyệt các item trong Cart
             foreach (Cart::content() as $item) {
-                // Lấy ID sản phẩm gốc và định giá theo variant (nếu có)
                 $productIdOriginal = $item->options->product_id_original ?? null;
                 $variantId         = $item->options->variant_id ?? null;
 
-                // Tạo OrderItem
                 OrderItem::create([
                     'order_id'           => $order->id,
                     'product_id'         => $productIdOriginal,
@@ -353,42 +357,46 @@ class CheckoutPage extends Component
                     'subtotal'           => $item->subtotal,
                 ]);
 
-                // Giảm tồn kho của sản phẩm (Product::stock_quantity)
+                // Giảm tồn kho
                 if ($productIdOriginal) {
                     $product = Product::find($productIdOriginal);
                     if ($product) {
-                        // Giảm đúng số lượng khách hàng đặt
                         $product->decrement('stock_quantity', $item->qty);
                     }
                 }
-
-                // Nếu bạn có giảm tồn kho cho variant riêng lẻ, có thể thêm ở đây:
-                // if ($variantId) {
-                //     $variant = ProductVariant::find($variantId);
-                //     if ($variant) {
-                //         $variant->decrement('stock_quantity', $item->qty);
-                //     }
-                // }
             }
 
-            // Áp dụng Promotion (nếu có)
+            // Áp dụng Promotion nếu có
             if ($this->appliedPromotion) {
                 $order->promotions()->attach($this->appliedPromotion->id, [
                     'discount_applied' => $this->discountAmount,
                 ]);
-                // Tăng số lần đã dùng mã
                 $this->appliedPromotion->increment('times_used');
             }
 
             // Xóa giỏ hàng
             Cart::destroy();
 
-            // Lưu order_number vào session để hiển thị trang success
+            // Lưu order_number vào session để hiển thị ở trang success
             session()->put('last_order_number', $order->order_number);
             $orderNumber = $order->order_number;
         });
 
-        // Chuyển hướng tới trang success
+        // --- Sau khi DB::transaction thành công, tiến hành gửi email ---
+        if ($order) {
+            // 1) Gửi email xác nhận cho khách hàng
+            Mail::to($order->customer_email)
+                ->send(new OrderConfirmationMail($order));
+
+            // 2) Gửi email thông báo cho admin
+            $adminEmail = config('mail.admin_address'); // hoặc env('ADMIN_EMAIL')
+            if ($adminEmail) {
+                Mail::to($adminEmail)
+                    ->send(new NewOrderAdminMail($order));
+            }
+        }
+
+        // Chuyển hướng đến trang success
         return redirect()->route('checkout.success', ['orderId' => $orderNumber]);
     }
 
