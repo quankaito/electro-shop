@@ -3,20 +3,36 @@
 # Chờ một chút để đảm bảo các dịch vụ khác (như database) sẵn sàng
 sleep 2
 
-# === BƯỚC MỚI: BUILD JAVASCRIPT TẠI ĐÂY ===
-# Tại thời điểm này, các biến môi trường VITE_* đã tồn tại.
+# === BƯỚC 1: XÓA SẠCH TẤT CẢ CACHE ===
+echo "Clearing all application caches..."
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan event:clear
+
+# === BƯỚC 2: BUILD JAVASCRIPT ===
 echo "Running npm run build..."
 npm run build
 
-# Chạy các lệnh cache của Laravel
-echo "Running cache commands..."
+# === BƯỚC 3: CACHE LẠI CẤU HÌNH MỚI ===
+echo "Caching new configuration..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Chạy database migrations
+# === BƯỚC 4: LIÊN KẾT THƯ MỤC STORAGE ===
+# Xóa link cũ nếu có để tránh lỗi, rồi tạo link mới
+echo "Linking storage..."
+if [ -L "public/storage" ]; then
+    rm "public/storage"
+fi
+php artisan storage:link
+
+# === BƯỚC 5: CHẠY DATABASE MIGRATIONS ===
 echo "Running database migrations..."
 php artisan migrate --force
 
 # Dòng cuối cùng này sẽ thực thi lệnh được truyền vào từ Dockerfile (chính là supervisord)
+echo "Starting Supervisor..."
 exec "$@"
