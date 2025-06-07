@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,  // Thêm dòng này
         ]);
+        $middleware->prepend(\App\Http\Middleware\TrustProxies::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
