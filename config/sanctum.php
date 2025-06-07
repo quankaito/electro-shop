@@ -21,6 +21,8 @@ return [
         Sanctum::currentApplicationUrlWithPort(),
         // Sanctum::currentRequestHost(),
     ))),
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'https://electroshop-j5xv.onrender.com')),
+
 
     /*
     |--------------------------------------------------------------------------

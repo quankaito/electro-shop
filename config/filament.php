@@ -98,4 +98,17 @@ return [
 
     'system_route_prefix' => 'filament',
 
+    'temporary_file_upload' => [
+        'disk' => env('FILAMENT_FILESYSTEM_DISK', 'public'),
+        'directory' => 'livewire-tmp',
+        // THÊM HOẶC SỬA DÒNG NÀY ĐỂ TRÔNG NHƯ SAU:
+        'middleware' => 'web', // <-- Đảm bảo dòng này tồn tại và có giá trị là 'web'
+        'rules' => ['file', 'mimes:png,jpg,jpeg,gif,webp', 'max:102400'],
+        'preview_mimes' => [
+            'image/png',
+            'image/jpeg',
+            'image/gif',
+            'image/webp',
+        ],
+    ],
 ];
