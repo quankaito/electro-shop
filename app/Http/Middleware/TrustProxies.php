@@ -12,15 +12,13 @@ class TrustProxies extends Middleware
      *
      * @var array<int, string>|string|null
      */
-    // Thay đổi dòng này từ null hoặc một địa chỉ IP thành '*'
-    protected $proxies = '*';
+    protected $proxies = '*'; // Phải là dấu '*'
 
     /**
      * The headers that should be used to detect proxies.
      *
      * @var int
      */
-    // Thay đổi dòng này để bao gồm tất cả các header
     protected $headers =
         Request::HEADER_X_FORWARDED_FOR |
         Request::HEADER_X_FORWARDED_HOST |
