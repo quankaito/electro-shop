@@ -54,7 +54,7 @@ RUN composer install --no-dev --optimize-autoloader
 # 7. Build frontend
 #############################################
 RUN npm install
-RUN npm run build
+# RUN npm run build
 
 #############################################
 # 8. Copy các file cấu hình
