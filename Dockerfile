@@ -1,6 +1,6 @@
 #################################################################
-# Dockerfile Hoàn Chỉnh cho Laravel trên Render (Đã sửa lỗi)
-# Chạy PHP-FPM và Queue Worker với Supervisor
+# Dockerfile Cuối Cùng cho Laravel trên Render
+# Sử dụng Entrypoint Script và Supervisor
 #################################################################
 
 #############################################
@@ -47,45 +47,50 @@ WORKDIR /var/www/html
 
 #############################################
 # 5. Copy TOÀN BỘ source code
-#    Lưu ý: Bạn nên có file .dockerignore
 #############################################
 COPY . .
 
 #############################################
-# 6. Cài dependencies PHP và chạy scripts (Gộp làm một)
-#    Đây là cách làm chuẩn và đáng tin cậy.
+# 6. Cài dependencies PHP và chạy scripts
 #############################################
 RUN composer install --no-dev --optimize-autoloader
 
 #############################################
-# 7. Build frontend (npm install + npm run build)
+# 7. Build frontend
 #############################################
 RUN npm install
 RUN npm run build
 
 #############################################
-# 8. Copy file cấu hình của Supervisor vào image
+# 8. Copy file cấu hình Supervisor và script Entrypoint
 #############################################
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 #############################################
-# 9. Tối ưu hóa Laravel cho Production và Phân quyền
-#    Lưu ý: Không tạo APP_KEY ở đây, hãy đặt nó trong Environment Variables của Render
+# 9. Phân quyền
+#    Đã xóa các lệnh cache khỏi đây.
+#    Thêm quyền thực thi cho script entrypoint.
 #############################################
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
+RUN chmod +x /usr/local/bin/entrypoint.sh \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
 #############################################
-# 10. Expose PORT 9000 (cổng PHP-FPM lắng nghe)
+# 10. Expose PORT 9000
 #############################################
 EXPOSE 9000
 
 #############################################
-# 11. Lệnh khởi động cuối cùng
-#     Chạy Supervisor, nó sẽ tự động khởi động php-fpm và queue worker
+# 11. Script khởi động (Entrypoint)
+#     Chỉ định script sẽ chạy đầu tiên khi container khởi động.
+#############################################
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+#############################################
+# 12. Lệnh mặc định (CMD)
+#     Lệnh này sẽ được truyền vào cho ENTRYPOINT.
+#     Script entrypoint sẽ chạy lệnh này sau khi hoàn tất.
 #############################################
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
