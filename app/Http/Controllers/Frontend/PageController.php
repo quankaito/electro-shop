@@ -8,6 +8,8 @@ use App\Models\Category;     // Thêm import Category
 use App\Models\Faq;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\Promotion;
+use App\Models\Brand;
 use Illuminate\Http\Request;
 
 class PageController extends Controller
@@ -35,12 +37,26 @@ class PageController extends Controller
                                      ->orderBy('name')
                                      ->get();
 
-        // Truyền thêm $categoriesForHome vào view
+        // === PHẦN MÃ MỚI ===
+        // Lấy khuyến mãi được đánh dấu nổi bật, còn hạn và đang hoạt động
+        $featuredPromotion = Promotion::where('is_featured_on_home', true)
+                                      ->where('is_active', true)
+                                      ->where('start_date', '<=', now())
+                                      ->where('end_date', '>=', now()) // Phải có ngày kết thúc để đếm ngược
+                                      ->first(); // Chỉ lấy 1 cái         
+                                      // === PHẦN MÃ MỚI: LẤY THƯƠNG HIỆU ===
+        $brandsForHome = Brand::where('is_active', true)
+                                ->whereNotNull('logo') // Chỉ lấy các brand có logo cho đẹp
+                                ->take(12) // Lấy tối đa 12 brand
+                                ->get();                    
+                                // Truyền thêm $categoriesForHome vào view
         return view('frontend.home', compact(
             'featuredProducts',
             'newProducts',
             'homeBanners',
-            'categoriesForHome'
+            'categoriesForHome',
+            'featuredPromotion',
+            'brandsForHome'
         ));
     }
 

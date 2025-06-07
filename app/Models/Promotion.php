@@ -23,6 +23,7 @@ class Promotion extends Model
         'usage_limit_per_user',
         'times_used',
         'is_active',
+        'is_featured_on_home',
     ];
 
     protected $casts = [

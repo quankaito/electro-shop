@@ -216,30 +216,44 @@
                     @if($currentStep >= 3)
                         <div class="mt-4 space-y-3">
                             @forelse($paymentMethods as $method)
-                                <label class="flex items-start p-3 border rounded-md cursor-pointer
-                                              {{ $selectedPaymentMethodId == $method->id
-                                                 ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-500'
-                                                 : 'border-gray-300' }}">
-                                    <input
-                                        type="radio"
-                                        wire:model.lazy="selectedPaymentMethodId"
-                                        name="payment_method"
-                                        value="{{ $method->id }}"
-                                        class="form-radio h-5 w-5 text-indigo-600 mt-1"
-                                    />
-                                    <div class="ml-3 flex-grow">
-                                        <span class="block text-sm font-medium text-gray-800">
-                                            {{ $method->name }}
-                                        </span>
-                                        @if($method->description)
-                                            <p class="text-xs text-gray-500 mt-1">{{ $method->description }}</p>
-                                        @endif
-                                        @if($selectedPaymentMethodId == $method->id && $method->instructions)
-                                            <div class="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
-                                                {!! nl2br(e($method->instructions)) !!}
-                                            </div>
-                                        @endif
+                                <label class="flex items-start justify-between p-3 border rounded-md cursor-pointer
+                                            {{ $selectedPaymentMethodId == $method->id
+                                               ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-500'
+                                               : 'border-gray-300' }}">
+                                    {{-- Radio + nội dung --}}
+                                    <div class="flex items-start">
+                                        <input
+                                            type="radio"
+                                            wire:model.lazy="selectedPaymentMethodId"
+                                            name="payment_method"
+                                            value="{{ $method->id }}"
+                                            class="form-radio h-5 w-5 text-indigo-600 mt-1"
+                                        />
+                                        <div class="ml-3">
+                                            <span class="block text-sm font-medium text-gray-800">
+                                                {{ $method->name }}
+                                            </span>
+                                            @if($method->description)
+                                                <p class="text-xs text-gray-500 mt-1">{{ $method->description }}</p>
+                                            @endif
+                                            @if($selectedPaymentMethodId == $method->id && $method->instructions)
+                                                <div class="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
+                                                    {!! nl2br(e($method->instructions)) !!}
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
+
+                                    {{-- Logo bên phải chỉ khi có và tồn tại --}}
+                                    @if($method->logo && Storage::disk('cloudinary')->exists($method->logo))
+                                        <div class="flex-shrink-0 ml-4">
+                                            <img
+                                                src="{{ Storage::disk('cloudinary')->url($method->logo) }}"
+                                                alt="{{ $method->name }} logo"
+                                                class="w-24 h-24 md:w-32 md:h-32 lg:w-48 lg:h-48 object-contain rounded-lg"
+                                            />
+                                        </div>
+                                    @endif
                                 </label>
                             @empty
                                 <p class="text-gray-500">Không có phương thức thanh toán.</p>
@@ -310,9 +324,11 @@
                                 type="button"
                                 wire:click="applyCoupon"
                                 wire:loading.attr="disabled"
-                                class="px-4 bg-indigo-600 text-white border border-l-0 rounded-r-md hover:bg-indigo-700 focus:outline-none"
+                                wire:target="applyCoupon" {{-- Thêm target để spinner chỉ hiện khi bấm nút này --}}
+                                class="relative px-4 bg-indigo-600 text-white border border-l-0 rounded-r-md hover:bg-indigo-700 focus:outline-none"
                             >
-                                Áp dụng
+                                <span wire:loading.remove wire:target="applyCoupon">Áp dụng</span>
+                                <span wire:loading wire:target="applyCoupon">Đang...</span>
                             </button>
                         </div>
                         @error('couponCode')
@@ -333,6 +349,73 @@
                             </div>
                         @endif
                     </div>
+                    {{-- ========================================================= --}}
+                    {{-- PHẦN MÃ MỚI: HIỂN THỊ CÁC VOUCHER GỢI Ý (Bản cập nhật)  --}}
+                    {{-- ========================================================= --}}
+                    @if($availablePromotions && $availablePromotions->isNotEmpty() && !$appliedPromotion)
+                    <div class="mt-4">
+                        <p class="text-sm font-medium text-gray-800 mb-2">✨ Chọn một mã giảm giá có sẵn:</p>
+                        <div class="space-y-3">
+                            @foreach($availablePromotions as $promo)
+                                <div class="p-3 bg-yellow-50 border border-dashed border-yellow-400 rounded-lg flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        {{-- Icon Voucher --}}
+                                        <div class="flex-shrink-0 mr-3">
+                                            <div class="w-10 h-10 bg-yellow-400 text-white rounded-lg flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h3m0 0h3m-3 0a2 2 0 00-2-2V7a2 2 0 002-2h3a2 2 0 002-2V5a2 2 0 00-2-2H5z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        
+                                        {{-- Thông tin voucher --}}
+                                        <div>
+                                            <p class="font-semibold text-gray-900">{{ $promo->name }}</p>
+                                            <div class="text-xs text-gray-600 space-y-0.5">
+                                                {{-- Dòng 1: Mô tả giảm giá và điều kiện tối thiểu --}}
+                                                <p>
+                                                    @if($promo->type == 'percentage')
+                                                        Giảm {{ (int)$promo->value }}%
+                                                        @if($promo->max_discount_amount)
+                                                            (tối đa {{ number_format($promo->max_discount_amount, 0, ',', '.') }}đ).
+                                                        @endif
+                                                    @else
+                                                        Giảm {{ number_format($promo->value, 0, ',', '.') }}đ.
+                                                    @endif
+                                                    @if($promo->min_order_value > 0)
+                                                        Cho đơn từ {{ number_format($promo->min_order_value, 0, ',', '.') }}đ.
+                                                    @endif
+                                                </p>
+                                                {{-- Dòng 2: Hạn sử dụng và Lượt dùng còn lại --}}
+                                                <p class="flex items-center space-x-2">
+                                                    @if($promo->end_date)
+                                                        <span> HSD: {{ $promo->end_date->format('d/m/Y') }}</span>
+                                                    @endif
+                                                    
+                                                    @if($promo->usage_limit_per_code > 0)
+                                                        @if($promo->end_date) <span class="text-gray-300">|</span> @endif
+                                                        <span> Còn {{ $promo->usage_limit_per_code - $promo->times_used }} lượt</span>
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Nút Áp dụng --}}
+                                    <button
+                                        type="button"
+                                        wire:click="applySuggestedCoupon('{{ $promo->code }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="applySuggestedCoupon('{{ $promo->code }}')"
+                                        class="ml-4 px-3 py-1 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-full hover:bg-indigo-200 focus:outline-none flex-shrink-0"
+                                    >
+                                        Áp dụng
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- Totals --}}
                     <div class="mt-6 space-y-2">

@@ -20,6 +20,14 @@ use Illuminate\Support\Facades\Mail;
 
 class CheckoutPage extends Component
 {
+    // Thêm thuộc tính này vào đầu class CheckoutPage
+    public $availablePromotions;
+    // Thêm phương thức này vào trong class CheckoutPage
+    public function applySuggestedCoupon($code)
+    {
+        $this->couponCode = $code;
+        $this->applyCoupon();
+    }
     public int $currentStep = 1;
 
     // Step 1: Shipping Info
@@ -109,6 +117,8 @@ class CheckoutPage extends Component
 
         // Tính toán các giá trị subtotal, tax, total lần đầu
         $this->calculateTotals();
+        // Tải các khuyến mãi có sẵn sau khi đã có subtotal
+        $this->loadAvailablePromotions(); // <--- DÒNG MỚI
     }
 
     /**
@@ -195,6 +205,37 @@ class CheckoutPage extends Component
     public function updatedSelectedShippingMethodId()
     {
         $this->calculateTotals();
+    }
+
+    // Thêm phương thức này vào trong class CheckoutPage
+    // Trong file CheckoutPage.php
+
+    public function loadAvailablePromotions()
+    {
+        // Lấy subtotal hiện tại để so sánh
+        $currentSubtotal = (float) str_replace(',', '', (string) Cart::subtotal(2, '.', ''));
+
+        $this->availablePromotions = Promotion::where('is_active', true)
+            ->where('start_date', '<=', now())
+            ->where(function ($query) {
+                // Điều kiện: hoặc không có ngày hết hạn, hoặc ngày hết hạn trong tương lai
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where(function ($query) {
+                // Điều kiện: hoặc không giới hạn lượt dùng, hoặc lượt dùng chưa hết
+                $query->whereNull('usage_limit_per_code')
+                    ->orWhereRaw('times_used < usage_limit_per_code');
+            })
+            // === PHẦN SỬA ĐỔI QUAN TRỌNG ===
+            // Điều kiện: hoặc không yêu cầu giá trị tối thiểu, HOẶC giá trị tối thiểu phù hợp
+            ->where(function ($query) use ($currentSubtotal) {
+                $query->whereNull('min_order_value')
+                    ->orWhere('min_order_value', '=', 0)
+                    ->orWhere('min_order_value', '<=', $currentSubtotal);
+            })
+            ->orderBy('value', 'desc') // Ưu tiên các mã có giá trị giảm cao hơn
+            ->get();
     }
 
     /**
