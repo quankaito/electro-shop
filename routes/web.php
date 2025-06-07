@@ -98,3 +98,19 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
     Route::post('/api/chat/message', [ChatController::class, 'sendMessage'])->name('chat.send.message');
 });
+// --- ROUTE CHẨN ĐOÁN (CÓ THỂ XÓA SAU KHI SỬA LỖI) ---
+Route::get('/debug-livewire-url', function () {
+    echo '<h1>Chẩn đoán URL cho Livewire/Filament</h1>';
+
+    echo '<h2>Cấu hình từ file .env (config)</h2>';
+    echo '<b>config("app.url"):</b> ' . config('app.url') . '<br>';
+    echo '<b>config("livewire.app_url"):</b> ' . config('livewire.app_url') . '<br>';
+    echo '<b>config("session.domain"):</b> ' . var_export(config('session.domain'), true) . '<br>';
+
+    echo '<h2>URL được tạo ra bởi Laravel</h2>';
+    echo '<b>url("/"):</b> ' . url('/') . '<br>';
+
+    echo '<h2>Thông tin Request thực tế</h2>';
+    echo '<b>Request::getSchemeAndHttpHost():</b> ' . request()->getSchemeAndHttpHost() . '<br>';
+    echo '<b>Request::isSecure():</b> ' . (request()->isSecure() ? 'true' : 'false') . '<br>';
+});
