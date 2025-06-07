@@ -1,5 +1,5 @@
 #################################################################
-# Dockerfile Hoàn Chỉnh cho Laravel trên Render
+# Dockerfile Hoàn Chỉnh cho Laravel trên Render (Đã sửa lỗi)
 # Chạy PHP-FPM và Queue Worker với Supervisor
 #################################################################
 
@@ -47,35 +47,30 @@ WORKDIR /var/www/html
 
 #############################################
 # 5. Copy TOÀN BỘ source code
-#    Lưu ý: Bạn nên có file .dockerignore để loại trừ các file/thư mục không cần thiết
+#    Lưu ý: Bạn nên có file .dockerignore
 #############################################
 COPY . .
 
 #############################################
-# 6. Cài dependencies PHP qua Composer
-#    Sử dụng các cờ tối ưu cho production
+# 6. Cài dependencies PHP và chạy scripts (Gộp làm một)
+#    Đây là cách làm chuẩn và đáng tin cậy.
 #############################################
-RUN composer install --no-interaction --no-plugins --no-scripts --no-dev --optimize-autoloader --prefer-dist
+RUN composer install --no-dev --optimize-autoloader
 
 #############################################
-# 7. Chạy lại các script của Composer (quan trọng)
-#############################################
-RUN composer run-script post-install-cmd
-
-#############################################
-# 8. Build frontend (npm install + npm run build)
+# 7. Build frontend (npm install + npm run build)
 #############################################
 RUN npm install
 RUN npm run build
 
 #############################################
-# 9. Copy file cấu hình của Supervisor vào image
-#    (Yêu cầu bạn phải tạo file supervisord.conf trong project)
+# 8. Copy file cấu hình của Supervisor vào image
 #############################################
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 #############################################
-# 10. Tối ưu hóa Laravel cho Production và Phân quyền
+# 9. Tối ưu hóa Laravel cho Production và Phân quyền
+#    Lưu ý: Không tạo APP_KEY ở đây, hãy đặt nó trong Environment Variables của Render
 #############################################
 RUN php artisan config:cache \
     && php artisan route:cache \
@@ -85,12 +80,12 @@ RUN php artisan config:cache \
     && chmod -R 775 /var/www/html/bootstrap/cache
 
 #############################################
-# 11. Expose PORT 9000 (cổng PHP-FPM lắng nghe)
+# 10. Expose PORT 9000 (cổng PHP-FPM lắng nghe)
 #############################################
 EXPOSE 9000
 
 #############################################
-# 12. Lệnh khởi động cuối cùng
+# 11. Lệnh khởi động cuối cùng
 #     Chạy Supervisor, nó sẽ tự động khởi động php-fpm và queue worker
 #############################################
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
