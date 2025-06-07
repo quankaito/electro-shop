@@ -24,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
         config()->set('livewire.app_url', config('app.url'));
+        config()->set('livewire.temporary_file_upload.disk', 'local');
     }
 }
