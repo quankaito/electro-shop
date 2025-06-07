@@ -97,6 +97,8 @@
                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tài Khoản</a>
                             <a href="{{ route('account.orders') }}"
                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Đơn Hàng</a>
+                            <a href="{{ route('dashboard') }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
                             @if(Auth::user()->is_admin)
                                 <a href="{{ route('filament.admin.pages.dashboard') }}" target="_blank"
                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Trang Quản Trị</a>

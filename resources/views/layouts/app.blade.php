@@ -1,4 +1,3 @@
-{{-- resources/views/layouts/app.blade.php --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -12,32 +11,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite('resources/css/app.css')
     @livewireStyles
-    @stack('styles') {{-- Cho các style cụ thể của trang --}}
+    @stack('styles')
 </head>
 <body class="font-sans antialiased bg-gray-100 text-gray-900">
     <div class="min-h-screen flex flex-col">
-        <!-- Header -->
         @include('frontend.partials.header')
 
-        <!-- Page Content -->
         <main class="flex-grow">
-            {{-- Nội dung của các view Blade thông thường --}}
             @yield('content')
-
-            {{-- Nếu có Livewire component, Livewire sẽ gán vào biến $slot --}}
             @isset($slot)
                 {{ $slot }}
             @endisset
         </main>
 
-        <!-- Footer -->
         @include('frontend.partials.footer')
     </div>
 
+    <!-- JS: Load app.js TRƯỚC livewireScripts -->
+    @vite('resources/js/app.js')
+
+    <!-- Livewire Scripts -->
     @livewireScripts
-    <x-toast-notification /> {{-- Component Toast từ Alpine.js --}}
-    @stack('scripts') {{-- Cho các script cụ thể của trang --}}
+
+    <!-- Extra Scripts -->
+    <x-toast-notification />
+    @stack('scripts')
+    <!-- <x-chat-widget /> -->
+    @auth
+    @php
+        // Lấy thông tin cuộc hội thoại của user đang đăng nhập ngay tại đây
+        $conversation = \App\Models\Conversation::firstOrCreate(['user_id' => auth()->id()]);
+    @endphp
+
+    {{-- Truyền thẳng đối tượng conversation vào component --}}
+    <x-chat-widget :conversation="$conversation" />
+@endauth
 </body>
 </html>

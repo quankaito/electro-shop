@@ -10,6 +10,7 @@ use App\Http\Controllers\Frontend\BlogController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Livewire\User\Dashboard as UserDashboard; 
+use App\Http\Controllers\Api\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -94,3 +95,6 @@ require __DIR__.'/auth.php';
 // Route::fallback(function () {
 //    return view('errors.404'); // Tạo view errors/404.blade.php
 // });
+Route::middleware('auth')->group(function () {
+    Route::post('/api/chat/message', [ChatController::class, 'sendMessage'])->name('chat.send.message');
+});

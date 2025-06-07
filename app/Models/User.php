@@ -66,4 +66,8 @@ class User extends Authenticatable implements FilamentUser // Implement Filament
     {
         return $this->hasMany(Post::class); // Nếu User là tác giả bài viết
     }
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
 }
