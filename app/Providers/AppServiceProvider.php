@@ -23,5 +23,6 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+        config()->set('livewire.app_url', config('app.url'));
     }
 }
