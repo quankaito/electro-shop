@@ -11,6 +11,12 @@ php artisan route:clear
 php artisan view:clear
 php artisan event:clear
 
+# === BƯỚC MỚI: ĐẢM BẢO THƯ MỤC SESSION ĐÚNG QUYỀN ===
+echo "Ensuring session directory exists and has correct permissions..."
+mkdir -p storage/framework/sessions
+chown -R www-data:www-data storage/framework/sessions
+chmod -R 775 storage/framework/sessions
+
 # === BƯỚC 2: BUILD JAVASCRIPT ===
 echo "Running npm run build..."
 npm run build
@@ -22,7 +28,6 @@ php artisan route:cache
 php artisan view:cache
 
 # === BƯỚC 4: LIÊN KẾT THƯ MỤC STORAGE ===
-# Xóa link cũ nếu có để tránh lỗi, rồi tạo link mới
 echo "Linking storage..."
 if [ -L "public/storage" ]; then
     rm "public/storage"
