@@ -1,35 +1,40 @@
 #!/bin/sh
 sleep 2
 
-# === SỬA QUYỀN ===
-echo "Finalizing permissions..."
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# === CÁC LỆNH SETUP CỦA LARAVEL ===
+echo "Running setup commands..."
 
-# === CÁC LỆNH CACHE CƠ BẢN ===
-echo "Clearing and Caching configuration..."
+# Xóa cache cũ để đảm bảo không có xung đột
+php artisan cache:clear
 php artisan config:clear
-php artisan view:clear
 php artisan route:clear
+php artisan view:clear
+php artisan event:clear
+
+# Cache lại cấu hình
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# === LIÊN KẾT THƯ MỤC STORAGE ===
-echo "Linking storage..."
+# Liên kết storage
 if [ -L "public/storage" ]; then
     rm "public/storage"
 fi
 php artisan storage:link
 
-# === CHẠY DATABASE MIGRATIONS ===
-echo "Running database migrations..."
+# Migrate database
 php artisan migrate --force
 
-# === BƯỚC MỚI: DISPATCH JOB LÀM NÓNG CACHE (chạy siêu nhanh) ===
-echo "Dispatching Cloudinary cache warming job..."
+# Dispatch job làm nóng cache Cloudinary
 php artisan tinker --execute="App\Jobs\WarmCloudinaryCacheJob::dispatch()"
 
-# Dòng cuối cùng này sẽ thực thi lệnh được truyền vào từ Dockerfile
+# === BƯỚC QUAN TRỌNG NHẤT: SỬA QUYỀN TOÀN DIỆN ===
+# Chạy lệnh này cuối cùng để đảm bảo tất cả các file, kể cả file do artisan
+# và npm build tạo ra, đều có đúng quyền cho user www-data.
+echo "Finalizing all permissions..."
+chown -R www-data:www-data /var/www/html
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Khởi động server
 echo "Starting Supervisor..."
 exec "$@"
