@@ -3,6 +3,12 @@
 # Chờ một chút để đảm bảo các dịch vụ khác (như database) sẵn sàng
 sleep 2
 
+# === BƯỚC QUAN TRỌNG NHẤT: SỬA QUYỀN GHI ===
+# Cấp quyền ghi cho user www-data vào TOÀN BỘ thư mục storage và bootstrap/cache
+echo "Setting ownership and permissions for storage and cache..."
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
 # === BƯỚC 1: XÓA SẠCH TẤT CẢ CACHE ===
 echo "Clearing all application caches..."
 php artisan cache:clear
@@ -10,12 +16,6 @@ php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 php artisan event:clear
-
-# === BƯỚC MỚI: ĐẢM BẢO THƯ MỤC SESSION ĐÚNG QUYỀN ===
-echo "Ensuring session directory exists and has correct permissions..."
-mkdir -p storage/framework/sessions
-chown -R www-data:www-data storage/framework/sessions
-chmod -R 775 storage/framework/sessions
 
 # === BƯỚC 2: BUILD JAVASCRIPT ===
 echo "Running npm run build..."
