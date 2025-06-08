@@ -32,6 +32,16 @@ php artisan storage:link
 echo "Running database migrations..."
 php artisan migrate --force
 
+# === BƯỚC MỚI: LÀM NÓNG CACHE CLOUDINARY ===
+echo "Warming Cloudinary URL cache..."
+php artisan app:warm-cloudinary-cache
+
+# === CACHE LẠI CẤU HÌNH CUỐI CÙNG ===
+echo "Caching final configuration..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
 # === BƯỚC CUỐI CÙNG & QUAN TRỌNG NHẤT: SỬA QUYỀN ===
 # Chạy lệnh này cuối cùng để đảm bảo tất cả các file (kể cả file cache mới tạo)
 # đều có đúng quyền cho user www-data.
