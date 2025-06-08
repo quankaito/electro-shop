@@ -1,88 +1,45 @@
-#################################################################
-# Dockerfile CUỐI CÙNG cho Laravel trên Render
-# Chạy Nginx + PHP-FPM + Queue Worker với Supervisor
-#################################################################
+# Dockerfile Cuối Cùng - Tối ưu và Bền vững
 
-#############################################
-# 1. Chọn PHP 8.3-FPM làm base image
-#############################################
 FROM php:8.3-fpm
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-#############################################
-# 2. Cài gói hệ thống + NGINX + SUPERVISOR
-#############################################
+# Cài đặt các gói cần thiết một lần duy nhất
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    curl \
-    libpq-dev \
-    libicu-dev \
-    libonig-dev \
-    libzip-dev \
-    zip \
-    build-essential \
-    nodejs \
-    npm \
-    nginx \
-    supervisor \
+    git unzip curl libpq-dev libicu-dev libonig-dev libzip-dev zip \
+    build-essential nodejs npm nginx supervisor \
     && docker-php-ext-install pdo_pgsql intl mbstring zip bcmath \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-#############################################
-# 3. Copy Composer
-#############################################
+# Copy Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-#############################################
-# 4. Chọn thư mục làm việc
-#############################################
+# Đặt thư mục làm việc
 WORKDIR /var/www/html
 
-#############################################
-# 5. Copy source code
-#############################################
+# Copy toàn bộ mã nguồn
 COPY . .
 
-#############################################
-# 6. Cài dependencies PHP
-#############################################
+# Cài đặt dependencies
 RUN composer install --no-dev --optimize-autoloader
 RUN composer dump-autoload --optimize
-
-#############################################
-# 7. Build frontend
-#############################################
 RUN npm install
-# RUN npm run build
 
-#############################################
-# 8. Copy các file cấu hình
-#############################################
+# === BƯỚC BUILD QUAN TRỌNG NHẤT VÀ DEBUG ===
+# Chạy build và ngay lập tức liệt kê các file trong thư mục build để kiểm tra
+RUN echo "Running npm run build..." && npm run build && ls -la public/build
+
+# Copy các file cấu hình
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY default.conf /etc/nginx/sites-enabled/default
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-#############################################
-# 9. Phân quyền
-#############################################
-RUN chmod +x /usr/local/bin/entrypoint.sh \
-    && chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
+# Cấp quyền thực thi cho script khởi động
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-#############################################
-# 10. Expose PORT 8080 (Port mà Nginx sẽ lắng nghe)
-#############################################
+# Expose port của Nginx
 EXPOSE 8080
 
-#############################################
-# 11. Script khởi động (Entrypoint)
-#############################################
+# Đặt script khởi động
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-#############################################
-# 12. Lệnh mặc định (CMD)
-#############################################
+# Lệnh mặc định để chạy Supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
