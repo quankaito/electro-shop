@@ -3,13 +3,7 @@
 # Chờ một chút để đảm bảo các dịch vụ khác (như database) sẵn sàng
 sleep 2
 
-# === BƯỚC QUAN TRỌNG NHẤT: SỬA QUYỀN GHI ===
-# Cấp quyền ghi cho user www-data vào TOÀN BỘ thư mục storage và bootstrap/cache
-echo "Setting ownership and permissions for storage and cache..."
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-# === BƯỚC 1: XÓA SẠCH TẤT CẢ CACHE ===
+# === BƯỚC 1: XÓA SẠCH TẤT CẢ CACHE CŨ ===
 echo "Clearing all application caches..."
 php artisan cache:clear
 php artisan config:clear
@@ -38,6 +32,13 @@ php artisan storage:link
 echo "Running database migrations..."
 php artisan migrate --force
 
-# Dòng cuối cùng này sẽ thực thi lệnh được truyền vào từ Dockerfile (chính là supervisord)
+# === BƯỚC CUỐI CÙNG & QUAN TRỌNG NHẤT: SỬA QUYỀN ===
+# Chạy lệnh này cuối cùng để đảm bảo tất cả các file (kể cả file cache mới tạo)
+# đều có đúng quyền cho user www-data.
+echo "Finalizing permissions..."
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Dòng cuối cùng này sẽ thực thi lệnh được truyền vào từ Dockerfile
 echo "Starting Supervisor..."
 exec "$@"
