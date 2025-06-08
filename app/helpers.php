@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 
 if (! function_exists('cloudinary_url')) {
     /**
-     * Lấy URL từ Cloudinary và cache lại vĩnh viễn để tránh bị rate limit.
+     * Lấy URL từ CACHE. Nếu không có, trả về chuỗi rỗng để tránh timeout.
+     * Công việc điền vào cache thuộc về một Job chạy nền.
      *
      * @param string|null $path
      * @return string
@@ -17,14 +17,10 @@ if (! function_exists('cloudinary_url')) {
             return '';
         }
 
-        // Tạo một khóa cache duy nhất cho mỗi đường dẫn ảnh
         $cacheKey = 'cloudinary.url.' . md5($path);
 
-        // Dùng Cache::rememberForever để lấy và lưu trữ URL
-        // Lần đầu tiên chạy, nó sẽ gọi API Cloudinary và lưu kết quả.
-        // Các lần sau, nó sẽ lấy thẳng từ cache mà không cần gọi API.
-        return Cache::rememberForever($cacheKey, function () use ($path) {
-            return cloudinary_url($path);
-        });
+        // Chỉ LẤY từ cache. Nếu không có, trả về giá trị mặc định là chuỗi rỗng ''.
+        // KHÔNG dùng rememberForever ở đây nữa.
+        return Cache::get($cacheKey, '');
     }
 }
