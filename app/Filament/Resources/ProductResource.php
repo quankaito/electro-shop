@@ -240,14 +240,24 @@ class ProductResource extends Resource
                     ->sortable(),
             ])
             ->filters([
+                // SỬA LẠI 2 BỘ LỌC NÀY
                 Tables\Filters\SelectFilter::make('category_id')
-                    ->relationship('category', 'name')
-                    ->label('Category'),
+                    ->label('Category')
+                    ->options(
+                        \App\Models\Category::query()
+                            ->whereNotNull('name') // Chỉ lấy category có tên
+                            ->pluck('name', 'id')
+                    ),
 
                 Tables\Filters\SelectFilter::make('brand_id')
-                    ->relationship('brand', 'name')
-                    ->label('Brand'),
+                    ->label('Brand')
+                    ->options(
+                        \App\Models\Brand::query()
+                            ->whereNotNull('name') // Chỉ lấy brand có tên
+                            ->pluck('name', 'id')
+                    ),
 
+                // Các bộ lọc khác giữ nguyên
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Active Status'),
 
