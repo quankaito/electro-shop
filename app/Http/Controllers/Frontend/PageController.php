@@ -18,12 +18,12 @@ class PageController extends Controller
     {
         $featuredProducts = Product::where('is_featured', true)
             ->where('is_active', true)
-            ->take(8)
+            ->take(4)
             ->get();
 
         $newProducts = Product::where('is_active', true)
             ->latest()
-            ->take(8)
+            ->take(4)
             ->get();
 
         $homeBanners = Banner::where('is_active', true)
@@ -47,9 +47,9 @@ class PageController extends Controller
                                       // === PHẦN MÃ MỚI: LẤY THƯƠNG HIỆU ===
         $brandsForHome = Brand::where('is_active', true)
                                 ->whereNotNull('logo') // Chỉ lấy các brand có logo cho đẹp
-                                ->take(12) // Lấy tối đa 12 brand
-                                ->get();                    
-                                // Truyền thêm $categoriesForHome vào view
+                                ->take(4) // Lấy tối đa 4 brand
+                                ->get();
+        // Truyền thêm $categoriesForHome vào view
         return view('frontend.home', compact(
             'featuredProducts',
             'newProducts',
