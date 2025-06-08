@@ -16,10 +16,13 @@
             <div class="relative" x-data="{ activeSlide: 1, slides: {{ $homeBanners->count() }} }">
                 @foreach($homeBanners as $index => $banner)
                     @php
-                        // Build URL cho banner
-                        $transformBanner = 'c_fill,w_1200,h_500,f_auto,q_auto';
-                        $publicIdBanner  = $banner->image_url_desktop;
-                        $urlBanner       = $baseCloudUrl . $transformBanner . '/' . $publicIdBanner;
+                        // Tách thư mục và filename (bỏ phần .png/.jpg)
+                        $rawPath       = $banner->image_url_desktop;                   // e.g. "banners/desktop/01JX6MM7SW4YST5VF3WEJZAYS5.png"
+                        $dir           = pathinfo($rawPath, PATHINFO_DIRNAME);        // "banners/desktop"
+                        $filename      = pathinfo($rawPath, PATHINFO_FILENAME);       // "01JX6MM7SW4YST5VF3WEJZAYS5"
+                        $publicId      = "{$dir}/{$filename}";                        // "banners/desktop/01JX6MM7SW4YST5VF3WEJZAYS5"
+                        $transform     = 'c_fill,w_1200,h_500,f_auto,q_auto';
+                        $urlBanner     = "{$baseCloudUrl}{$transform}/{$publicId}.png";
                     @endphp
 
                     <div x-show="activeSlide === {{ $index + 1 }}">
@@ -54,8 +57,8 @@
     @if($featuredPromotion)
         <section class="bg-gray-800 text-white py-12 mb-12">
             <div class="container mx-auto px-4 text-center"
-                x-data="countdown('{{ $featuredPromotion->end_date->toIso8601String() }}')"
-                x-init="init()">
+                 x-data="countdown('{{ $featuredPromotion->end_date->toIso8601String() }}')"
+                 x-init="init()">
                 
                 <h2 class="text-3xl md:text-4xl font-bold uppercase tracking-wider mb-2">
                     {{ $featuredPromotion->name }}
@@ -114,21 +117,21 @@
                     days: '00', hours: '00', minutes: '00', seconds: '00', interval: null,
                     init() {
                         this.updateTime();
-                        this.interval = setInterval(() => { this.updateTime(); }, 1000);
+                        this.interval = setInterval(() => this.updateTime(), 1000);
                     },
                     updateTime() {
-                        const diff = this.endDate.getTime() - new Date().getTime();
+                        const diff = this.endDate - new Date();
                         if (diff <= 0) {
                             clearInterval(this.interval);
                             this.days = this.hours = this.minutes = this.seconds = '00';
                             return;
                         }
-                        this.days    = this.pad(Math.floor(diff / (1000 * 60 * 60 * 24)));
-                        this.hours   = this.pad(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
-                        this.minutes = this.pad(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
-                        this.seconds = this.pad(Math.floor((diff % (1000 * 60)) / 1000));
+                        this.days    = this.pad(Math.floor(diff / 86400000));
+                        this.hours   = this.pad(Math.floor((diff % 86400000) / 3600000));
+                        this.minutes = this.pad(Math.floor((diff % 3600000) / 60000));
+                        this.seconds = this.pad(Math.floor((diff % 60000) / 1000));
                     },
-                    pad: num => String(num).padStart(2, '0')
+                    pad(num) { return String(num).padStart(2, '0'); }
                 }
             }
         </script>
@@ -143,10 +146,12 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6">
                     @foreach($categoriesForHome as $category)
                         @php
-                            // Build URL cho ảnh category
-                            $transformCat = 'c_fill,w_400,h_160,f_auto,q_auto';
-                            $pubCat       = $category->image_path;
-                            $urlCat       = $baseCloudUrl . $transformCat . '/' . $pubCat;
+                            $rawCat    = $category->image_path;                         // e.g. "categories/laptop.jpg"
+                            $dirCat    = pathinfo($rawCat, PATHINFO_DIRNAME);
+                            $fileCat   = pathinfo($rawCat, PATHINFO_FILENAME);
+                            $pubCat    = "{$dirCat}/{$fileCat}";
+                            $transCat  = 'c_fill,w_400,h_160,f_auto,q_auto';
+                            $urlCat    = "{$baseCloudUrl}{$transCat}/{$pubCat}.jpg";
                         @endphp
                         <a href="{{ route('products.category', $category->slug) }}"
                            class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
@@ -179,10 +184,12 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6">
                     @foreach($brandsForHome as $brand)
                         @php
-                            // Build URL cho logo brand
-                            $transformBrand = 'c_fill,h_80,f_auto,q_auto';
-                            $pubBrand       = $brand->logo;
-                            $urlBrand       = $baseCloudUrl . $transformBrand . '/' . $pubBrand;
+                            $rawBrand   = $brand->logo;                                  // e.g. "brands/apple.png"
+                            $dirBrand   = pathinfo($rawBrand, PATHINFO_DIRNAME);
+                            $fileBrand  = pathinfo($rawBrand, PATHINFO_FILENAME);
+                            $pubBrand   = "{$dirBrand}/{$fileBrand}";
+                            $transBrand = 'c_fill,h_80,f_auto,q_auto';
+                            $urlBrand   = "{$baseCloudUrl}{$transBrand}/{$pubBrand}.png";
                         @endphp
                         <a href="{{ route('products.index', ['brand' => $brand->slug]) }}"
                            class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
@@ -205,7 +212,7 @@
                 </div>
             </section>
         @endif
-        
+
         <!-- 5. Sản phẩm nổi bật -->
         @if($featuredProducts->isNotEmpty())
             <section class="mb-12">
@@ -222,7 +229,7 @@
         @if($newProducts->isNotEmpty())
             <section class="mb-12">
                 <h2 class="text-3xl font-semibold mb-6 text-center">Hàng Mới Về</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg-grid-cols-4 gap-6">
                     @foreach($newProducts as $product)
                         @include('frontend.partials.product-card', ['product' => $product])
                     @endforeach
