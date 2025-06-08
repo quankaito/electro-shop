@@ -1,18 +1,31 @@
-{{-- resources/views/frontend/home.blade.php (Đã được sắp xếp lại) --}}
+{{-- resources/views/frontend/home.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Trang Chủ')
 
 @section('content')
+    @php
+        // Lấy cloud name và base URL của Cloudinary
+        $cloudName    = config('cloudinary.cloud_name');
+        $baseCloudUrl = "https://res.cloudinary.com/{$cloudName}/image/upload/";
+    @endphp
+
     <!-- 1. Hero Section / Banners -->
     @if($homeBanners->isNotEmpty())
         <section class="mb-12">
             <div class="relative" x-data="{ activeSlide: 1, slides: {{ $homeBanners->count() }} }">
                 @foreach($homeBanners as $index => $banner)
+                    @php
+                        // Build URL cho banner
+                        $transformBanner = 'c_fill,w_1200,h_500,f_auto,q_auto';
+                        $publicIdBanner  = $banner->image_url_desktop;
+                        $urlBanner       = $baseCloudUrl . $transformBanner . '/' . $publicIdBanner;
+                    @endphp
+
                     <div x-show="activeSlide === {{ $index + 1 }}">
                         <a href="{{ $banner->link_url ?? '#' }}">
                             <img
-                                src="{{ Storage::disk('cloudinary')->url($banner->image_url_desktop) }}"
+                                src="{{ $urlBanner }}"
                                 alt="{{ $banner->title }}"
                                 class="w-full h-auto object-cover"
                                 style="max-height: 500px;"
@@ -86,7 +99,7 @@
                 
                 <div>
                     <a href="{{ route('products.index') }}" 
-                    class="bg-yellow-500 text-gray-900 font-bold uppercase py-3 px-8 rounded-lg hover:bg-yellow-400 transition-colors duration-300">
+                       class="bg-yellow-500 text-gray-900 font-bold uppercase py-3 px-8 rounded-lg hover:bg-yellow-400 transition-colors duration-300">
                         Mua sắm ngay
                     </a>
                 </div>
@@ -110,8 +123,8 @@
                             this.days = this.hours = this.minutes = this.seconds = '00';
                             return;
                         }
-                        this.days = this.pad(Math.floor(diff / (1000 * 60 * 60 * 24)));
-                        this.hours = this.pad(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+                        this.days    = this.pad(Math.floor(diff / (1000 * 60 * 60 * 24)));
+                        this.hours   = this.pad(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
                         this.minutes = this.pad(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
                         this.seconds = this.pad(Math.floor((diff % (1000 * 60)) / 1000));
                     },
@@ -123,25 +136,35 @@
     @endif
 
     <div class="container mx-auto px-4">
-        <!-- 3. Khám Phá Danh Mục (ĐÃ DI CHUYỂN LÊN TRÊN) -->
+        <!-- 3. Khám Phá Danh Mục -->
         @if(isset($categoriesForHome) && $categoriesForHome->isNotEmpty())
             <section class="mb-12">
                 <h2 class="text-3xl font-semibold mb-6 text-center">Khám Phá Danh Mục</h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6">
                     @foreach($categoriesForHome as $category)
+                        @php
+                            // Build URL cho ảnh category
+                            $transformCat = 'c_fill,w_400,h_160,f_auto,q_auto';
+                            $pubCat       = $category->image_path;
+                            $urlCat       = $baseCloudUrl . $transformCat . '/' . $pubCat;
+                        @endphp
                         <a href="{{ route('products.category', $category->slug) }}"
                            class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                            @if(isset($category->image_path) && $category->image_path)
-                                <div class="w-full h-40 bg-gray-100 overflow-hidden">
-                                    <img src="{{ Storage::disk('cloudinary')->url($category->image_path) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
-                                </div>
-                            @else
-                                <div class="w-full h-40 bg-gray-100 flex items-center justify-center">
-                                    <span class="text-gray-400">Chưa có ảnh</span>
-                                </div>
-                            @endif
+                            <div class="w-full h-40 bg-gray-100 overflow-hidden">
+                                @if($category->image_path)
+                                    <img src="{{ $urlCat }}"
+                                         alt="{{ $category->name }}"
+                                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <span class="text-gray-400">Chưa có ảnh</span>
+                                    </div>
+                                @endif
+                            </div>
                             <div class="p-4 text-center">
-                                <h3 class="text-lg font-medium text-gray-800 group-hover:text-indigo-600 transition-colors">{{ $category->name }}</h3>
+                                <h3 class="text-lg font-medium text-gray-800 group-hover:text-indigo-600 transition-colors">
+                                    {{ $category->name }}
+                                </h3>
                             </div>
                         </a>
                     @endforeach
@@ -149,31 +172,29 @@
             </section>
         @endif
 
-        <!-- 4. Thương Hiệu (Brands) (ĐÃ DI CHUYỂN LÊN TRÊN) -->
+        <!-- 4. Thương Hiệu -->
         @if(isset($brandsForHome) && $brandsForHome->isNotEmpty())
             <section class="mb-12">
                 <h2 class="text-3xl font-semibold mb-6 text-center">Thương Hiệu Nổi Bật</h2>
-                
-                <!-- Sử dụng lại cấu trúc grid của category để đồng bộ -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-6">
                     @foreach($brandsForHome as $brand)
-                        <!-- Sử dụng lại cấu trúc thẻ <a> của category -->
+                        @php
+                            // Build URL cho logo brand
+                            $transformBrand = 'c_fill,h_80,f_auto,q_auto';
+                            $pubBrand       = $brand->logo;
+                            $urlBrand       = $baseCloudUrl . $transformBrand . '/' . $pubBrand;
+                        @endphp
                         <a href="{{ route('products.index', ['brand' => $brand->slug]) }}"
-                        class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                            
-                            <!-- Phần hiển thị ảnh: Thay vì ảnh nền, ta đặt logo vào giữa khu vực ảnh -->
+                           class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                             <div class="w-full h-40 bg-gray-50 flex items-center justify-center p-4">
                                 @if($brand->logo)
-                                    <img src="{{ Storage::disk('cloudinary')->url($brand->logo) }}" 
-                                        alt="{{ $brand->name }}" 
-                                        class="max-h-20 object-contain transition-transform duration-300 group-hover:scale-110">
+                                    <img src="{{ $urlBrand }}"
+                                         alt="{{ $brand->name }}"
+                                         class="max-h-20 object-contain transition-transform duration-300 group-hover:scale-110">
                                 @else
-                                    {{-- Fallback nếu không có logo, giống như category không có ảnh --}}
                                     <span class="text-gray-400">Chưa có logo</span>
                                 @endif
                             </div>
-                            
-                            <!-- Phần hiển thị tên, giống hệt category -->
                             <div class="p-4 text-center">
                                 <h3 class="text-lg font-medium text-gray-800 group-hover:text-indigo-600 transition-colors">
                                     {{ $brand->name }}
