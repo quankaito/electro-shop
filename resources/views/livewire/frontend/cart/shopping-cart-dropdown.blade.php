@@ -45,7 +45,7 @@
                                                 ?: $product->images->first()->image_path;
 
                                     // Lấy URL từ Cloudinary
-                                    $imageUrl = Storage::disk('cloudinary')->url($imgPath);
+                                    $imageUrl = cloudinary_url($imgPath);
                                 } else {
                                     $imageUrl = 'https://via.placeholder.com/64?text=NoImg';
                                 }

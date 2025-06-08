@@ -49,6 +49,7 @@ COPY . .
 # 6. Cài dependencies PHP
 #############################################
 RUN composer install --no-dev --optimize-autoloader
+RUN composer dump-autoload --optimize
 
 #############################################
 # 7. Build frontend

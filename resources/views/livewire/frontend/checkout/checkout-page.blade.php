@@ -248,7 +248,7 @@
                                     @if($method->logo && Storage::disk('cloudinary')->exists($method->logo))
                                         <div class="flex-shrink-0 ml-4">
                                             <img
-                                                src="{{ Storage::disk('cloudinary')->url($method->logo) }}"
+                                                src="{{ cloudinary_url($method->logo) }}"
                                                 alt="{{ $method->name }} logo"
                                                 class="w-24 h-24 md:w-32 md:h-32 lg:w-48 lg:h-48 object-contain rounded-lg"
                                             />
@@ -291,7 +291,7 @@
                                 if ($prod && $prod->images->isNotEmpty()) {
                                     $firstImg = $prod->images->firstWhere('is_thumbnail', true)?->image_path
                                               ?: $prod->images->first()->image_path;
-                                    $img = Storage::disk('cloudinary')->url($firstImg);
+                                    $img = cloudinary_url($firstImg);
                                 } else {
                                     $img = 'https://via.placeholder.com/64?text=NoImg';
                                 }

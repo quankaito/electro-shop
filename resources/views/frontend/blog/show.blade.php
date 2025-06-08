@@ -9,7 +9,7 @@
         <article class="bg-white p-6 md:p-8 rounded-lg shadow-md">
             @if($post->featured_image)
                 <img 
-                    src="{{ Storage::disk('cloudinary')->url($post->featured_image) }}" 
+                    src="{{ cloudinary_url($post->featured_image) }}" 
                     alt="{{ $post->title }}" 
                     class="w-full h-auto max-h-[500px] object-cover rounded-lg mb-6"
                 >
@@ -42,7 +42,7 @@
             <div class="mt-10 pt-6 border-t flex items-center">
                 @if($post->author->avatar)
                     <img 
-                        src="{{ Storage::disk('cloudinary')->url($post->author->avatar) }}" 
+                        src="{{ cloudinary_url($post->author->avatar) }}" 
                         alt="{{ $post->author->name }}" 
                         class="w-16 h-16 rounded-full mr-4 object-cover"
                     >
@@ -90,7 +90,7 @@
                         @if($relatedPost->featured_image)
                             <a href="{{ route('blog.show', $relatedPost->slug) }}">
                                 <img 
-                                    src="{{ Storage::disk('cloudinary')->url($relatedPost->featured_image) }}" 
+                                    src="{{ cloudinary_url($relatedPost->featured_image) }}" 
                                     alt="{{ $relatedPost->title }}" 
                                     class="w-full h-40 object-cover rounded-t-lg mb-3"
                                 >

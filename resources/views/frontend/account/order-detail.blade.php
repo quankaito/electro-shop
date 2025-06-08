@@ -53,7 +53,7 @@
                                     $firstImage = $item->product->images->first();
                                 @endphp
                                 <img
-                                    src="{{ Storage::disk('cloudinary')->url($firstImage->image_path) }}"
+                                    src="{{ cloudinary_url($firstImage->image_path) }}"
                                     alt="{{ $item->product_name }}"
                                     class="w-20 h-20 object-cover rounded mr-4"
                                 >

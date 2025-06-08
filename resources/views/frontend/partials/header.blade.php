@@ -65,7 +65,7 @@
                                 class="flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 focus:outline-none">
                             @if(Auth::user()->avatar)
                                 <img
-                                    src="{{ Storage::disk('cloudinary')->url(Auth::user()->avatar) }}"
+                                    src="{{ cloudinary_url(Auth::user()->avatar) }}"
                                     alt="{{ Auth::user()->name }}"
                                     class="w-8 h-8 rounded-full mr-2 object-cover"
                                 >

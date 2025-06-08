@@ -42,7 +42,7 @@
             <div class="mt-1 flex items-center space-x-4">
                 @if ($existingAvatar)
                     <img
-                        src="{{ Storage::disk('cloudinary')->url($existingAvatar) }}"
+                        src="{{ cloudinary_url($existingAvatar) }}"
                         alt="Current Avatar"
                         class="w-16 h-16 rounded-full object-cover"
                     >

@@ -12,7 +12,7 @@
 
             @if($imgPath)
                 <img
-                    src="{{ Storage::disk('cloudinary')->url($imgPath) }}"
+                    src="{{ cloudinary_url($imgPath) }}"
                     alt="{{ $product->name }}"
                     class="w-full h-full object-cover"
                 >

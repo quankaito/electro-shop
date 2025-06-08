@@ -44,7 +44,7 @@
         <div class="space-y-6">
             @foreach($reviews as $review)
                 <div class="flex space-x-4 border-b pb-4 last:border-b-0 last:pb-0" wire:key="review-{{ $review->id }}">
-                    <img src="{{ $review->user->avatar ? Storage::disk('cloudinary')->url($review->user->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($review->user->name).'&color=7F9CF5&background=EBF4FF' }}"
+                    <img src="{{ $review->user->avatar ? cloudinary_url($review->user->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($review->user->name).'&color=7F9CF5&background=EBF4FF' }}"
                          alt="{{ $review->user->name }}" class="w-12 h-12 rounded-full object-cover">
                     <div>
                         <div class="flex items-center mb-1">

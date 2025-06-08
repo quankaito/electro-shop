@@ -48,7 +48,7 @@
                     @endphp
                     <img
                         id="mainProductImage"
-                        src="{{ Storage::disk('cloudinary')->url($firstImage) }}"
+                        src="{{ cloudinary_url($firstImage) }}"
                         alt="{{ $product->name }}"
                         class="w-full h-auto max-h-[500px] object-contain rounded-lg border"
                     >
@@ -59,10 +59,10 @@
                     <div class="grid grid-cols-4 gap-2">
                         @foreach($product->images as $image)
                             <img
-                                src="{{ Storage::disk('cloudinary')->url($image->image_path) }}"
+                                src="{{ cloudinary_url($image->image_path) }}"
                                 alt="{{ $image->alt_text ?: $product->name }}"
                                 class="w-full h-24 object-cover rounded cursor-pointer border hover:border-indigo-500"
-                                onclick="document.getElementById('mainProductImage').src='{{ Storage::disk('cloudinary')->url($image->image_path) }}'"
+                                onclick="document.getElementById('mainProductImage').src='{{ cloudinary_url($image->image_path) }}'"
                             >
                         @endforeach
                     </div>

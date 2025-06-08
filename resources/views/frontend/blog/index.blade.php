@@ -13,7 +13,7 @@
                 <article class="bg-white p-6 rounded-lg shadow-md">
                     @if($post->featured_image)
                         <a href="{{ route('blog.show', $post->slug) }}">
-                            <img src="{{ Storage::disk('cloudinary')->url($post->featured_image) }}" alt="{{ $post->title }}" class="w-full h-64 object-cover rounded-t-lg mb-4">
+                            <img src="{{ cloudinary_url($post->featured_image) }}" alt="{{ $post->title }}" class="w-full h-64 object-cover rounded-t-lg mb-4">
                         </a>
                     @endif
                     <h2 class="text-2xl font-semibold mb-2">

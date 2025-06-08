@@ -12,7 +12,7 @@
                     <div x-show="activeSlide === {{ $index + 1 }}">
                         <a href="{{ $banner->link_url ?? '#' }}">
                             <img
-                                src="{{ Storage::disk('cloudinary')->url($banner->image_url_desktop) }}"
+                                src="{{ cloudinary_url($banner->image_url_desktop) }}"
                                 alt="{{ $banner->title }}"
                                 class="w-full h-auto object-cover"
                                 style="max-height: 500px;"
@@ -133,7 +133,7 @@
                            class="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                             @if(isset($category->image_path) && $category->image_path)
                                 <div class="w-full h-40 bg-gray-100 overflow-hidden">
-                                    <img src="{{ Storage::disk('cloudinary')->url($category->image_path) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                    <img src="{{ cloudinary_url($category->image_path) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                                 </div>
                             @else
                                 <div class="w-full h-40 bg-gray-100 flex items-center justify-center">
@@ -164,7 +164,7 @@
                             <!-- Phần hiển thị ảnh: Thay vì ảnh nền, ta đặt logo vào giữa khu vực ảnh -->
                             <div class="w-full h-40 bg-gray-50 flex items-center justify-center p-4">
                                 @if($brand->logo)
-                                    <img src="{{ Storage::disk('cloudinary')->url($brand->logo) }}" 
+                                    <img src="{{ cloudinary_url($brand->logo) }}" 
                                         alt="{{ $brand->name }}" 
                                         class="max-h-20 object-contain transition-transform duration-300 group-hover:scale-110">
                                 @else

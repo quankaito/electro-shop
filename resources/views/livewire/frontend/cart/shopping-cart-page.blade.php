@@ -18,7 +18,7 @@
                                     if ($product && $product->images->isNotEmpty()) {
                                         $firstImage = $product->images->firstWhere('is_thumbnail', true)?->image_path
                                                       ?: $product->images->first()->image_path;
-                                        $imageUrl   = Storage::disk('cloudinary')->url($firstImage);
+                                        $imageUrl   = cloudinary_url($firstImage);
                                     } else {
                                         $imageUrl = 'https://via.placeholder.com/100?text=NoImg';
                                     }
