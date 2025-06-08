@@ -1,8 +1,22 @@
-# Dockerfile Cuối Cùng - Tối ưu và Bền vững
+# Dockerfile Cuối Cùng - Hoàn Thiện
 
 FROM php:8.3-fpm
 
-# Cài đặt các gói cần thiết một lần duy nhất
+# === BƯỚC MỚI: Khai báo các biến sẽ được truyền vào lúc build ===
+# Render sẽ tự động tìm các biến môi trường tương ứng và truyền vào đây.
+ARG VITE_PUSHER_APP_KEY
+ARG VITE_PUSHER_APP_CLUSTER
+# Thêm các biến VITE_ khác của bạn nếu có
+# ARG VITE_APP_NAME 
+# ARG VITE_ASSET_URL
+
+# Expose các biến ARG thành biến môi trường để các lệnh RUN có thể sử dụng
+ENV VITE_PUSHER_APP_KEY=$VITE_PUSHER_APP_KEY
+ENV VITE_PUSHER_APP_CLUSTER=$VITE_PUSHER_APP_CLUSTER
+# ENV VITE_APP_NAME=$VITE_APP_NAME
+# ENV VITE_ASSET_URL=$VITE_ASSET_URL
+
+# Cài đặt các gói cần thiết
 RUN apt-get update && apt-get install -y \
     git unzip curl libpq-dev libicu-dev libonig-dev libzip-dev zip \
     build-essential nodejs npm nginx supervisor \
@@ -12,34 +26,23 @@ RUN apt-get update && apt-get install -y \
 # Copy Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Đặt thư mục làm việc
 WORKDIR /var/www/html
-
-# Copy toàn bộ mã nguồn
 COPY . .
 
-# Cài đặt dependencies
+# Cài đặt dependencies và build assets
+# Bây giờ, npm run build sẽ thấy các biến VITE_*
 RUN composer install --no-dev --optimize-autoloader
-RUN composer dump-autoload --optimize
 RUN npm install
-
-# === BƯỚC BUILD QUAN TRỌNG NHẤT VÀ DEBUG ===
-# Chạy build và ngay lập tức liệt kê các file trong thư mục build để kiểm tra
-RUN echo "Running npm run build..." && npm run build && ls -la public/build
+RUN npm run build
 
 # Copy các file cấu hình
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY default.conf /etc/nginx/sites-enabled/default
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Cấp quyền thực thi cho script khởi động
+# Cấp quyền thực thi
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expose port của Nginx
 EXPOSE 8080
-
-# Đặt script khởi động
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
-# Lệnh mặc định để chạy Supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
