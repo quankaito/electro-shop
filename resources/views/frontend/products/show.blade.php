@@ -37,18 +37,22 @@
         <!-- Product Images -->
         <div>
             @if($product->images->isNotEmpty())
+                {{-- BƯỚC MỚI: Lấy tất cả URL trong một lần gọi duy nhất ở đầu --}}
+                @php
+                    $imagePaths = $product->images->pluck('image_path')->all();
+                    $imageUrls = get_cloudinary_urls($imagePaths);
+                @endphp
+
                 {{-- Ảnh đại diện lớn --}}
                 <div class="mb-4">
-                    {{-- Lấy ảnh đầu tiên được đánh dấu thumbnail, nếu không có thì fallback ảnh đầu --}}
                     @php
-                        $firstImage = $product->images
-                            ->firstWhere('is_thumbnail', true)
+                        $firstImagePath = $product->images->firstWhere('is_thumbnail', true)
                             ? $product->images->firstWhere('is_thumbnail', true)->image_path
                             : $product->images->first()->image_path;
                     @endphp
                     <img
                         id="mainProductImage"
-                        src="{{ cloudinary_url($firstImage) }}"
+                        src="{{ $imageUrls[$firstImagePath] ?? '' }}" {{-- Sử dụng mảng đã lấy --}}
                         alt="{{ $product->name }}"
                         class="w-full h-auto max-h-[500px] object-contain rounded-lg border"
                     >
@@ -59,21 +63,17 @@
                     <div class="grid grid-cols-4 gap-2">
                         @foreach($product->images as $image)
                             <img
-                                src="{{ cloudinary_url($image->image_path) }}"
+                                src="{{ $imageUrls[$image->image_path] ?? '' }}" {{-- Sử dụng mảng đã lấy --}}
                                 alt="{{ $image->alt_text ?: $product->name }}"
                                 class="w-full h-24 object-cover rounded cursor-pointer border hover:border-indigo-500"
-                                onclick="document.getElementById('mainProductImage').src='{{ cloudinary_url($image->image_path) }}'"
+                                onclick="document.getElementById('mainProductImage').src='{{ $imageUrls[$image->image_path] ?? '' }}'"
                             >
                         @endforeach
                     </div>
                 @endif
             @else
-                {{-- Nếu không có ảnh --}}
-                <img
-                    src="https://via.placeholder.com/500x500?text=No+Image"
-                    alt="{{ $product->name }}"
-                    class="w-full h-auto object-contain rounded-lg border"
-                >
+                {{-- Fallback nếu không có ảnh --}}
+                <img src="https://via.placeholder.com/500x500?text=No+Image" ... >
             @endif
         </div>
 

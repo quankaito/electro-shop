@@ -7,6 +7,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class ImagesRelationManager extends RelationManager
 {
@@ -20,13 +21,18 @@ class ImagesRelationManager extends RelationManager
                 Forms\Components\FileUpload::make('image_path')
                     ->label('Image')
                     ->image()
-                    ->directory('products')            // nằm trong thư mục "products"
-                    ->disk('cloudinary')               // ← sử dụng disk “cloudinary”
+                    ->directory('products')
+                    ->disk('cloudinary')
                     ->required()
-                    ->deleteUploadedFileUsing(function (string $state): void {
-                        // Khi người dùng bấm Delete trên Filament, Filament sẽ gọi callback này.
-                        // $state chính là đường dẫn (public ID) trên Cloudinary, tự động do disk 'cloudinary' tạo.
-                        \Illuminate\Support\Facades\Storage::disk('cloudinary')->delete($state);
+                    ->deleteUploadedFileUsing(function ($state): void {
+                        $disk = Storage::disk('cloudinary');
+                        foreach ((array) $state as $path) {
+                            if (is_array($path) && isset($path['path'])) {
+                                $disk->delete($path['path']);
+                            } elseif (is_string($path)) {
+                                $disk->delete($path);
+                            }
+                        }
                     }),
 
                 Forms\Components\TextInput::make('alt_text')
@@ -49,7 +55,7 @@ class ImagesRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\ImageColumn::make('image_path')
                     ->label('Preview')
-                    ->disk('cloudinary')            // ← hiển thị từ Cloudinary
+                    ->disk('cloudinary')
                     ->height(80)
                     ->width(80),
 
@@ -67,28 +73,25 @@ class ImagesRelationManager extends RelationManager
             ->reorderable('sort_order')
             ->defaultSort('sort_order')
             ->headerActions([
-                // Khi bấm Create, Filament sẽ upload lên Cloudinary và lưu image_path là public ID
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
 
                 Tables\Actions\DeleteAction::make()
-                    ->before(function ($record, $livewire) {
-                        // Trước khi xóa bản ghi, xoá tệp trên Cloudinary
+                    ->before(function ($record): void {
                         if ($record->image_path) {
-                            \Illuminate\Support\Facades\Storage::disk('cloudinary')->delete($record->image_path);
+                            Storage::disk('cloudinary')->delete($record->image_path);
                         }
                     }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->before(function ($records) {
-                            // Xóa tệp của từng bản ghi trong bulk delete
+                        ->before(function ($records): void {
                             foreach ($records as $record) {
                                 if ($record->image_path) {
-                                    \Illuminate\Support\Facades\Storage::disk('cloudinary')->delete($record->image_path);
+                                    Storage::disk('cloudinary')->delete($record->image_path);
                                 }
                             }
                         }),
