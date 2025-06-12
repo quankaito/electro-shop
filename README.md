@@ -1,4 +1,7 @@
 Nguyen Minh Quan
+deploy by RENDER: 
+
+https://electroshop-j5xv.onrender.com/
 
 # electro-shop
 electronics store use TALL Stack and Filament - Cloudinary for media
